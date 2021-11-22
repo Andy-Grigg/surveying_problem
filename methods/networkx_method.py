@@ -10,8 +10,8 @@ from tools import get_neighbors
 METHOD_NAME = "NetworkX Method"
 
 
-def find_reservoirs(grid):
-    """ Uses a graph approach to find how many wells are needed, making the assumption that
+def find_reservoirs(grid) -> list[set[tuple[int, int]]]:
+    """Uses a graph approach to find how many wells are needed, making the assumption that
     only one well is needed per contiguous field
 
     locations: Set containing all locations with oil

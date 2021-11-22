@@ -1,9 +1,9 @@
 def get_neighbors(this_element, grid):
-    """ Returns a list of neighbor location objects
+    """Returns a list of neighbor location objects
 
-     this_element: A 2-tuple representing the x and y coordinates of an element
-     grid: A dictionary containing all elements and their state
-     """
+    this_element: A 2-tuple representing the x and y coordinates of an element
+    grid: A dictionary containing all elements and their state
+    """
     x_coord, y_coord = this_element
     x_offsets = [-1, 0, 1]
     y_offsets = [-1, 0, 1]

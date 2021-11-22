@@ -10,8 +10,8 @@ from tools import get_neighbors
 METHOD_NAME = "Graph-Tool Method"
 
 
-def find_reservoirs(locations):
-    """ Uses a graph approach to find how many wells are needed, making the assumption that
+def find_reservoirs(locations) -> list[set[tuple[int, int]]]:
+    """Uses a graph approach to find how many wells are needed, making the assumption that
     only one well is needed per contiguous field
 
     locations: Set containing all locations with oil
@@ -28,8 +28,9 @@ def find_reservoirs(locations):
     edge_list = []
     for location in locations:
         neighbor_coords = get_neighbors(location, locations)
-        edge_list.extend([(locations[location], locations[neighbor])
-                          for neighbor in neighbor_coords])
+        edge_list.extend(
+            [(locations[location], locations[neighbor]) for neighbor in neighbor_coords]
+        )
 
     locations_graph.add_edge_list(edge_list)
 

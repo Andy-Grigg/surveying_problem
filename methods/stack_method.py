@@ -7,8 +7,8 @@ from tools import get_neighbors
 METHOD_NAME = "Stack Method (List)"
 
 
-def find_reservoirs(this_grid):
-    """ Recursively determines how many wells are needed, making the assumption that
+def find_reservoirs(this_grid) -> list[set[tuple[int, int]]]:
+    """Recursively determines how many wells are needed, making the assumption that
     only one well is needed per contiguous field
 
     this_grid: This is the list of locations to be checked for the current reservoir
