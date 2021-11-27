@@ -6,8 +6,7 @@ from methods import (
     networkx_method,
     stack_method,
     stack_method_deque,
-    )
-import build_grid
+)
 
 
 def test_method_equality():
