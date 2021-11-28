@@ -2,22 +2,16 @@
 Calls each separate solution and summarizes results and performance """
 
 import time
-import argparse
 import sys
 import pandas as pd
 import pyjion
 from itertools import product
-from typing import Type
+from typing import Type, TYPE_CHECKING
 
-from src.model import (
-    NetworkXMethod,
-    DequeMethod,
-    StackMethod,
-    IGraphMethod,
-    RecursiveMethod,
-)
-from view import GridView
 from orchestrator import GridOrchestrator
+
+if TYPE_CHECKING:
+    from view import GridView
 
 sys.setrecursionlimit(1000000)
 
@@ -61,7 +55,7 @@ class DesignOfExperiments:
         return pd.DataFrame(results)
 
     @staticmethod
-    def _set_pyjion(pyjion_state):
+    def _set_pyjion(pyjion_state: bool):
         if pyjion_state:
             pyjion.enable()
             pyjion.config(pgc=False)
@@ -69,7 +63,7 @@ class DesignOfExperiments:
             pyjion.disable()
 
     @staticmethod
-    def _run_method(grid: GridView, model_type: Type) -> dict[str, int | float | str]:
+    def _run_method(grid: "GridView", model_type: Type) -> dict[str, int | float | str]:
         print(f"-" * 20)
         print(f"Method: {grid}")
         sim_run = SimulationRun(grid)
@@ -88,7 +82,7 @@ class DesignOfExperiments:
 
 
 class SimulationRun:
-    def __init__(self, grid: GridView):
+    def __init__(self, grid: "GridView"):
         self.grid = grid
         self.wells = None
         self._time_taken = None
@@ -142,58 +136,3 @@ class SimulationRun:
                 reservoir.sort()
                 reservoir_locations = "; ".join(map(str, reservoir))
                 print(f"Well size = {len(reservoir)}, locations: {reservoir_locations}")
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Implement the surveying interview question"
-    )
-    parser.add_argument(
-        "--grid_size", type=int, help="Size of the grid to be generated", default=50
-    )
-    args = parser.parse_args()
-
-    doe = DesignOfExperiments(
-        # grid_sizes=[10, 50, 100, 500, 1000, 5000, 10000],
-        grid_sizes=[
-            10,
-            50,
-            100,
-            500,
-        ],
-        # location_probabilities=[0.99, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7],
-        location_probabilities=[0.99, 0.95, 0.9, 0.85, 0.8],
-        model_types=[
-            NetworkXMethod,
-            DequeMethod,
-            RecursiveMethod,
-            StackMethod,
-            IGraphMethod,
-        ],
-        pyjion_state=[True, False],
-    )
-
-    df = doe.run()
-
-    # time_taken_sorted = sorted(time_taken.items(), key=lambda item: item[1])
-    # for idx, (method_name, duration) in enumerate(time_taken_sorted):
-    #     if idx == 0:
-    #         shortest_time = duration
-    #         shortest_method = method_name
-    #         print(
-    #             f"{1}: "
-    #             f"{shortest_method.ljust(20)}"
-    #             f"Time taken: {shortest_time:.3E} s"
-    #         )
-    #     else:
-    #         print(
-    #             f"{idx + 1}: "
-    #             f"{method_name.ljust(20)}"
-    #             f"Time taken: {duration:.3E} s, "
-    #             f"{duration / shortest_time:.2f} times slower than {shortest_method}"
-    #         )
-    # df = df.astype(
-    #     {"Grid Size": "int32", "Number of Sites": "int32", "Number of Wells": "int32"}
-    # )
-    # df.set_index(["Grid Size", "Probability"], inplace=True)
-    # df.to_pickle('results/results_all_methods_sparse.pkl')

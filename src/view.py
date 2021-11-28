@@ -1,24 +1,15 @@
 import colorama
 import lxml.etree as ET
 
-from src.model import GridModel
+from src.model import GridModel, Cell
 
 
 class GridView:
-    TOP_LEFT_CHAR = u"\u250c"
-    TOP_RIGHT_CHAR = u"\u2510"
-    TOP_CHAR = u"\u252c"
-    BOTTOM_LEFT_CHAR = u"\u2514"
-    BOTTOM_RIGHT_CHAR = u"\u2518"
-    BOTTOM_CHAR = u"\u2534"
-    LEFT_CHAR = u"\u251c"
-    RIGHT_CHAR = u"\u2524"
-    VERTICAL_CHAR = u"\u2502"
-    HORIZ_CHAR = u"\u2500"
-    VERTEX_CHAR = u"\u253c"
-
     def __init__(self, grid: GridModel):
         self._grid = grid
+
+    def __str__(self) -> str:
+        return str(self._grid)
 
     @property
     def size(self):
@@ -63,72 +54,95 @@ class GridView:
     def to_ascii_art(self):
         """Render the grid. Relies on a fixed-width font."""
 
-        if self._grid.size > 100:
-            print("Too big to render!")
-            return
-
         # Use the size of the grid to figure out how much to pad row and column indices by
-        num_chars_in_label = len(str(self._grid.size))
+        ascii_table = AsciiGrid(self._grid.cells, self._grid.size).draw()
+        print(ascii_table)
 
-        # Generate column headers
-        print(
+
+class AsciiGrid:
+    TOP_LEFT_CHAR = u"\u250c"
+    TOP_RIGHT_CHAR = u"\u2510"
+    TOP_CHAR = u"\u252c"
+    BOTTOM_LEFT_CHAR = u"\u2514"
+    BOTTOM_RIGHT_CHAR = u"\u2518"
+    BOTTOM_CHAR = u"\u2534"
+    LEFT_CHAR = u"\u251c"
+    RIGHT_CHAR = u"\u2524"
+    VERTICAL_CHAR = u"\u2502"
+    HORIZ_CHAR = u"\u2500"
+    VERTEX_CHAR = u"\u253c"
+    NEWLINE = "\n"
+
+    def __init__(self, grid: set[Cell], grid_size: int, horizontal_lines: bool = False):
+        self.cells = grid
+        self.grid_size = grid_size
+        self.coord_list = list(range(0, self.grid_size))  # Square grid only, so a single list of coords
+        self.num_chars_in_label = len(str(grid_size - 1))
+        self.horizontal_lines = horizontal_lines
+
+    def draw(self) -> str:
+        if self.grid_size > 100:
+            return "Too big to render!"
+
+        result = self._top_row()
+        result += "".join([self._data_row(row_number) for row_number in self.coord_list])
+        result += self._bottom_line()
+        return result
+
+    def _top_row(self) -> str:
+        return self._top_line() + self.NEWLINE + self._table_header() + self.NEWLINE
+
+    def _top_line(self) -> str:
+        top_line = (
             self.TOP_LEFT_CHAR
-            + (self.HORIZ_CHAR * num_chars_in_label + self.TOP_CHAR) * self._grid.size
-            + self.HORIZ_CHAR * num_chars_in_label
+            + (self.HORIZ_CHAR * self.num_chars_in_label + self.TOP_CHAR) * self.grid_size
+            + self.HORIZ_CHAR * self.num_chars_in_label
             + self.TOP_RIGHT_CHAR
         )
+        return top_line
+
+    def _table_header(self) -> str:
         column_heading_numbers = [
-            str(y).zfill(num_chars_in_label) for y in list(range(0, self._grid.size))
+            str(y).zfill(self.num_chars_in_label) for y in list(range(0, self.grid_size))
         ]
-        header = self.VERTICAL_CHAR.join(column_heading_numbers) + self.VERTICAL_CHAR
-        print(
-            self.VERTICAL_CHAR + " " * num_chars_in_label + self.VERTICAL_CHAR + header
-        )
+        column_headings = self.VERTICAL_CHAR.join(column_heading_numbers) + self.VERTICAL_CHAR
+        header = self.VERTICAL_CHAR + " " * self.num_chars_in_label + self.VERTICAL_CHAR + column_headings
+        return header
 
-        cell_separator = self.VERTEX_CHAR + self.HORIZ_CHAR * num_chars_in_label
+    def _row_divider(self) -> str:
+        cell_separator = self.VERTEX_CHAR + self.HORIZ_CHAR * self.num_chars_in_label
         row_divider = (
-            self.LEFT_CHAR
-            + self.HORIZ_CHAR * num_chars_in_label
-            + cell_separator * self._grid.size
-            + self.RIGHT_CHAR
+                self.LEFT_CHAR
+                + self.HORIZ_CHAR * self.num_chars_in_label
+                + cell_separator * self.grid_size
+                + self.RIGHT_CHAR
         )
+        return row_divider
 
-        print(row_divider)
+    def _data_row(self, row_number: int) -> str:
+        if row_number == 0 or self.horizontal_lines:
+            row = self._row_divider() + self.NEWLINE
+        else:
+            row = ""
+        row += self.VERTICAL_CHAR + str(row_number).zfill(self.num_chars_in_label) + self.VERTICAL_CHAR
+        for column_number in self.coord_list:
+            row += self._cell(column_number, row_number) * self.num_chars_in_label + self.VERTICAL_CHAR
+        return row + self.NEWLINE
 
-        # Initialize the first row
-        row = self.VERTICAL_CHAR + str(0).zfill(num_chars_in_label) + self.VERTICAL_CHAR
-        current_row = 0
+    def _cell(self, x_coord, y_coord) -> str:
+        # TODO: Somehow highlight different wells with different colors
+        marker = (
+            colorama.Fore.RED + "x" + colorama.Style.RESET_ALL
+            if (x_coord, y_coord) in self.cells
+            else " "
+        )
+        return marker
 
-        # TODO: Make this not rely on a particular creation order
-        for y_coord in list(range(0, self._grid.size)):
-            for x_coord in list(range(0, self._grid.size)):
-                # TODO: Somehow highlight different wells with different colors
-                marker = (
-                    colorama.Fore.RED + "x" + colorama.Style.RESET_ALL
-                    if (x_coord, y_coord) in self._grid.cells
-                    else " "
-                )
-                if y_coord == current_row:
-                    row = row + marker * num_chars_in_label + self.VERTICAL_CHAR
-                else:
-                    current_row = y_coord
-                    print(row)
-                    print(row_divider)
-                    row = (
-                        self.VERTICAL_CHAR
-                        + str(y_coord).zfill(num_chars_in_label)
-                        + self.VERTICAL_CHAR
-                        + marker * num_chars_in_label
-                        + self.VERTICAL_CHAR
-                    )
-        print(row)
-        print(
+    def _bottom_line(self) -> str:
+        return(
             self.BOTTOM_LEFT_CHAR
-            + (self.HORIZ_CHAR * num_chars_in_label + self.BOTTOM_CHAR)
-            * self._grid.size
-            + self.HORIZ_CHAR * num_chars_in_label
+            + (self.HORIZ_CHAR * self.num_chars_in_label + self.BOTTOM_CHAR)
+            * self.grid_size
+            + self.HORIZ_CHAR * self.num_chars_in_label
             + self.BOTTOM_RIGHT_CHAR
         )
-
-    def __str__(self) -> str:
-        return str(self._grid)
